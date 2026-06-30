@@ -13,6 +13,15 @@
     color:#fff; font-family: "Segoe UI", system-ui, sans-serif;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     min-height:100vh; overflow:hidden; user-select:none;
+    touch-action:none;
+  }
+  /* On phones, anchor the game near the top and leave a drag strip below,
+     so the controlling finger doesn't cover the playfield. */
+  @media (max-width: 640px), (pointer: coarse) {
+    body { justify-content:flex-start; padding-top:8px; }
+    #wrap { width:96vw; max-width:420px; }
+    canvas { width:100%; height:auto; }
+    #touchstrip { display:flex !important; }
   }
   h1 {
     font-size:1.6rem; letter-spacing:3px; margin-bottom:8px; text-transform:uppercase;
@@ -56,6 +65,14 @@
   }
   .btn:hover { transform:scale(1.06); }
   .hint { margin-top:14px; font-size:.8rem; opacity:.5; }
+  /* Mobile drag strip below the playfield — hidden on desktop */
+  #touchstrip {
+    display:none; align-items:center; justify-content:center;
+    width:96vw; max-width:420px; flex:1 1 auto; min-height:14vh; margin-top:10px;
+    border:1.5px dashed rgba(0,240,255,.3); border-radius:14px;
+    color:rgba(0,240,255,.55); font-size:.9rem; letter-spacing:1px;
+    background:rgba(0,240,255,.04);
+  }
 </style>
 </head>
 <body>
@@ -74,9 +91,10 @@
       <h2 id="title">Neon Drift</h2>
       <p id="msg">Dodge the falling blocks. Grab the <b style="color:var(--gold)">gold orbs</b> and catch <b style="color:#7CFC00">power-ups</b> — 🛡️ shield, ⏱️ slow-mo, 🧲 magnet. Climb through <b style="color:var(--neon)">5 levels</b>, each with its own music, colors & chaos!</p>
       <button class="btn" id="startBtn">Play</button>
-      <div class="hint">Move: ← → arrows / A · D &nbsp;·&nbsp; or mouse</div>
+      <div class="hint">Move: ← → arrows / A · D &nbsp;·&nbsp; mouse &nbsp;·&nbsp; or drag on phone</div>
     </div>
   </div>
+  <div id="touchstrip">✋ Drag here to move</div>
 
 <script>
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
@@ -696,12 +714,17 @@ cv.addEventListener('mousemove', e=>{
   const r=cv.getBoundingClientRect();
   player.x = (e.clientX-r.left)*(W/r.width) - player.w/2;
 });
-// touch
-cv.addEventListener('touchmove', e=>{
+// touch: drag anywhere on the page (canvas OR the strip below it) to steer.
+// Only the horizontal position matters, so the finger can stay clear of the playfield.
+function touchSteer(e){
+  if(!running || !e.touches || !e.touches.length) return;
   const r=cv.getBoundingClientRect();
-  player.x = (e.touches[0].clientX-r.left)*(W/r.width) - player.w/2;
+  let nx = (e.touches[0].clientX-r.left)*(W/r.width) - player.w/2;
+  player.x = Math.max(0, Math.min(W-player.w, nx));
   e.preventDefault();
-}, {passive:false});
+}
+window.addEventListener('touchstart', touchSteer, {passive:false});
+window.addEventListener('touchmove', touchSteer, {passive:false});
 </script>
 </body>
 </html>
