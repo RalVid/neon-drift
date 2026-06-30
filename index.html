@@ -673,9 +673,19 @@ function roundRect(x,y,w,h,r){
   ctx.closePath();
 }
 
-function loop(){
+const STEP_MS = 1000/60;        // one logic tick = 60Hz, independent of refresh rate
+let _lastT = 0, _acc = 0;
+function loop(now){
   if(!running) return;
-  update(); if(!running) return;
+  if(!_lastT) _lastT = now;
+  let dt = now - _lastT; _lastT = now;
+  if(dt > 250) dt = 250;        // clamp big gaps (e.g. tab/frame-rate throttling)
+  _acc += dt;
+  let steps = 0;
+  while(_acc >= STEP_MS && running && steps < 5){   // run logic at a fixed rate
+    update(); _acc -= STEP_MS; steps++;
+  }
+  if(!running) return;
   draw();
   requestAnimationFrame(loop);
 }
@@ -697,7 +707,8 @@ function start(){
   overlay.classList.add('hidden');
   Audio8.startMusic();
   reset();
-  loop();
+  _lastT = 0; _acc = 0;
+  requestAnimationFrame(loop);
 }
 
 startBtn.addEventListener('click', start);
