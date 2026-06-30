@@ -98,7 +98,7 @@
     <div id="banner"></div>
     <div id="overlay">
       <h2 id="title">Neon Drift</h2>
-      <p id="msg">You have <b style="color:#ff5d8f">3 lives</b>. Dodge the falling blocks. Grab the <b style="color:var(--gold)">gold orbs</b> and catch <b style="color:#7CFC00">power-ups</b> — 🛡️ shield, ⏱️ slow-mo, 🧲 magnet. Climb through <b style="color:var(--neon)">5 levels</b>, each with its own music, colors & chaos!</p>
+      <p id="msg">You have <b style="color:#ff5d8f">3 lives</b>. Dodge the falling blocks. Grab the <b style="color:var(--gold)">gold orbs</b> and catch <b style="color:#7CFC00">power-ups</b> — 🛡️ shield, ⏱️ slow-mo, 🧲 magnet, ❤️ extra life. Climb through <b style="color:var(--neon)">5 levels</b>, each with its own music, colors & chaos!</p>
       <button class="btn" id="startBtn">Play</button>
       <div class="hint">Move: ← → arrows / A · D &nbsp;·&nbsp; mouse &nbsp;·&nbsp; or drag on phone</div>
     </div>
@@ -372,7 +372,8 @@ let level, theme;          // current level index + active color palette
 let boss, bossBullets;     // level-5 boss + its projectiles
 // active power-up timers (frames remaining)
 let shield, slowmo, magnet;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;       // hard cap
+const START_LIVES = 3;     // lives at the start of a run
 let lives, invuln;         // lives left + brief i-frames after a hit
 let stars, shoot, shootT;  // space background: parallax starfield + shooting star
 
@@ -380,6 +381,7 @@ const PU_TYPES = {
   shield: { color:'#00ff9d', icon:'🛡️', label:'Shield' },
   slowmo: { color:'#5b8cff', icon:'⏱️', label:'Slow-Mo' },
   magnet: { color:'#ff8c2b', icon:'🧲', label:'Magnet' },
+  life:   { color:'#ff5d8f', icon:'❤️', label:'Extra Life' },
 };
 
 function applyTheme(t){
@@ -426,7 +428,7 @@ function reset(){
   score = 0; spawnT = 0; orbT = 0; puT = 360; speed = 2.6; running = true;
   keys = {}; frame = 0;
   shield = 0; slowmo = 0; magnet = 0;
-  lives = MAX_LIVES; invuln = 0; updateLives();
+  lives = START_LIVES; invuln = 0; updateLives();
   initStars();
   level = 0; applyTheme(LEVELS[0].theme); levelEl.textContent = 1;
   Audio8.setLevel(LEVELS[0].music);
@@ -446,8 +448,10 @@ function spawnOrb(){
   orbs.push({ x:20+Math.random()*(W-40), y:-20, r:9, vy:speed*0.9 });
 }
 function spawnPowerup(){
-  const keys = Object.keys(PU_TYPES);
-  const type = keys[Math.floor(Math.random()*keys.length)];
+  const pool = ['shield','slowmo','magnet'];
+  // Extra-life heart only appears when you have room for it (and is rarer).
+  if(lives < MAX_LIVES && Math.random() < 0.5) pool.push('life');
+  const type = pool[Math.floor(Math.random()*pool.length)];
   powerups.push({ x:24+Math.random()*(W-48), y:-22, r:13, vy:speed*0.8, type, spin:0 });
 }
 function updateLives(){
@@ -469,6 +473,10 @@ function activate(type){
   if(type==='shield') shield = 360;
   if(type==='slowmo') slowmo = 360;
   if(type==='magnet') magnet = 420;
+  if(type==='life'){
+    if(lives < MAX_LIVES){ lives++; updateLives(); }
+    else { score += 100; }   // already full — convert to a points bonus
+  }
   const t = PU_TYPES[type];
   burst(player.x+player.w/2, player.y, t.color, 24);
 }
