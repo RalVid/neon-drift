@@ -2,6 +2,8 @@
 
 A fast, neon synthwave arcade dodger that runs entirely in your browser — **no build, no dependencies, no assets**. Everything (graphics, music, and sound) is generated procedurally in a single HTML file.
 
+![Neon Drift screenshot](screenshot.png)
+
 ## ▶️ Play
 
 Just open `index.html` in any modern browser, or play it live via GitHub Pages once enabled:
