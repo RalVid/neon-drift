@@ -39,6 +39,8 @@ Climb through **5 levels**, each with its own music, color palette, and gameplay
 
 At Level 5 a boss appears. Damage it by collecting gold orbs while dodging its **aimed bullet volleys** and a **telegraphed sweeping laser**. It enrages as its HP drops. Defeat it for **+500** and an endless run.
 
+![The Void Guardian boss fight](boss.png)
+
 ## Audio
 
 All music and sound effects are synthesized live with the **Web Audio API**:
