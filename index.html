@@ -514,7 +514,7 @@ function update(){
     if(b.y>H){ blocks.splice(i,1); score+=1; continue; }
     if(b.x < player.x+player.w && b.x+b.w > player.x &&
        b.y < player.y+player.h && b.y+b.h > player.y){
-      if(shield>0){ burst(b.x+b.w/2,b.y+b.h/2,'#00ff9d',16); blocks.splice(i,1); shield=0; Audio8.sfx('power'); }
+      if(shield>0){ burst(b.x+b.w/2,b.y+b.h/2,'#00ff9d',16); blocks.splice(i,1); Audio8.sfx('power'); }
       else if(invuln>0){ /* mercy i-frames: pass through */ }
       else { blocks.splice(i,1); if(loseLife(b.x+b.w/2,b.y+b.h/2)) return; }
     }
@@ -568,7 +568,7 @@ function update(){
     else if(boss.beamState==='warn' && boss.beamT<=0){ boss.beamState='fire'; boss.beamT=34; Audio8.sfx('power'); }
     else if(boss.beamState==='fire'){
       if(Math.abs((player.x+player.w/2)-boss.beamX) < 26){
-        if(shield>0){ shield=0; burst(player.x+player.w/2,player.y,'#00ff9d',16); }
+        if(shield>0){ burst(player.x+player.w/2,player.y,'#00ff9d',16); }
         else if(invuln>0){ /* mercy i-frames */ }
         else if(loseLife(player.x+player.w/2,player.y)) return;
       }
@@ -580,7 +580,7 @@ function update(){
       const bb=bossBullets[i]; bb.x+=bb.vx*tf; bb.y+=bb.vy*tf;
       if(bb.y>H+20||bb.x<-20||bb.x>W+20){ bossBullets.splice(i,1); continue; }
       if(Math.hypot(bb.x-cx, bb.y-cy) < bb.r+16){
-        if(shield>0){ shield=0; burst(bb.x,bb.y,'#00ff9d',14); bossBullets.splice(i,1); }
+        if(shield>0){ burst(bb.x,bb.y,'#00ff9d',14); bossBullets.splice(i,1); }
         else if(invuln>0){ bossBullets.splice(i,1); }
         else { bossBullets.splice(i,1); if(loseLife(bb.x,bb.y)) return; }
       }
