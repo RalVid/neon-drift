@@ -480,7 +480,7 @@ function update(){
     }
     if(o.y>H+20){ orbs.splice(i,1); continue; }
     if(Math.hypot(o.x-cx,o.y-cy) < o.r+22){
-      score+=15; burst(o.x,o.y,theme.orb,18); orbs.splice(i,1); Audio8.sfx('orb');
+      score+=50; burst(o.x,o.y,theme.orb,18); orbs.splice(i,1); Audio8.sfx('orb');
       if(boss){ boss.hp--; boss.hitFlash=8; burst(boss.x+boss.w/2,boss.y+boss.h/2,theme.player,18);
                 if(boss.hp<=0){ defeatBoss(); } }
     }

@@ -16,7 +16,7 @@ https://ralvid.github.io/neon-drift/
 
 - **Move:** ← → arrows, `A` / `D`, or your mouse
 - **Dodge** the falling blocks
-- **Grab gold orbs** for bonus points (+15)
+- **Grab gold orbs** for bonus points (+50)
 - **Catch power-ups:**
   - 🛡️ **Shield** — blocks one hit
   - ⏱️ **Slow-Mo** — slows everything down
