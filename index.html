@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Neon Drift — Dodge the Blocks</title>
+<meta name="description" content="A synthwave arcade dodger — dodge the blocks, grab the orbs, beat the boss.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0a16">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Neon Drift">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root { --bg:#0a0a16; --neon:#00f0ff; --pink:#ff2bd6; --gold:#ffd700; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -738,6 +746,10 @@ function touchSteer(e){
 }
 window.addEventListener('touchstart', touchSteer, {passive:false});
 window.addEventListener('touchmove', touchSteer, {passive:false});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
 </script>
 </body>
 </html>
