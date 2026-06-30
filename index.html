@@ -87,6 +87,7 @@
   <h1>Neon Drift</h1>
   <div id="hud">
     <div><div class="label">LEVEL</div><span id="level" style="color:#fff">1</span></div>
+    <div><div class="label">LIVES</div><span id="lives" style="color:#ff5d8f">❤❤❤</span></div>
     <div><div class="label">SCORE</div><span class="score" id="score">0</span></div>
     <div><div class="label">BEST</div><span class="best" id="best">0</span></div>
     <div><div class="label">POWER</div><span id="power" style="color:#fff">—</span></div>
@@ -97,7 +98,7 @@
     <div id="banner"></div>
     <div id="overlay">
       <h2 id="title">Neon Drift</h2>
-      <p id="msg">Dodge the falling blocks. Grab the <b style="color:var(--gold)">gold orbs</b> and catch <b style="color:#7CFC00">power-ups</b> — 🛡️ shield, ⏱️ slow-mo, 🧲 magnet. Climb through <b style="color:var(--neon)">5 levels</b>, each with its own music, colors & chaos!</p>
+      <p id="msg">You have <b style="color:#ff5d8f">3 lives</b>. Dodge the falling blocks. Grab the <b style="color:var(--gold)">gold orbs</b> and catch <b style="color:#7CFC00">power-ups</b> — 🛡️ shield, ⏱️ slow-mo, 🧲 magnet. Climb through <b style="color:var(--neon)">5 levels</b>, each with its own music, colors & chaos!</p>
       <button class="btn" id="startBtn">Play</button>
       <div class="hint">Move: ← → arrows / A · D &nbsp;·&nbsp; mouse &nbsp;·&nbsp; or drag on phone</div>
     </div>
@@ -112,6 +113,7 @@ const overlay = document.getElementById('overlay'), startBtn = document.getEleme
 const titleEl = document.getElementById('title'), msgEl = document.getElementById('msg');
 const powerEl = document.getElementById('power');
 const levelEl = document.getElementById('level');
+const livesEl = document.getElementById('lives');
 const banner = document.getElementById('banner');
 
 let best = +(localStorage.getItem('neonDriftBest')||0);
@@ -370,6 +372,8 @@ let level, theme;          // current level index + active color palette
 let boss, bossBullets;     // level-5 boss + its projectiles
 // active power-up timers (frames remaining)
 let shield, slowmo, magnet;
+const MAX_LIVES = 3;
+let lives, invuln;         // lives left + brief i-frames after a hit
 
 const PU_TYPES = {
   shield: { color:'#00ff9d', icon:'🛡️', label:'Shield' },
@@ -421,6 +425,7 @@ function reset(){
   score = 0; spawnT = 0; orbT = 0; puT = 360; speed = 2.6; running = true;
   keys = {}; frame = 0;
   shield = 0; slowmo = 0; magnet = 0;
+  lives = MAX_LIVES; invuln = 0; updateLives();
   level = 0; applyTheme(LEVELS[0].theme); levelEl.textContent = 1;
   Audio8.setLevel(LEVELS[0].music);
   boss = null; bossBullets = [];
@@ -442,6 +447,21 @@ function spawnPowerup(){
   const keys = Object.keys(PU_TYPES);
   const type = keys[Math.floor(Math.random()*keys.length)];
   powerups.push({ x:24+Math.random()*(W-48), y:-22, r:13, vy:speed*0.8, type, spin:0 });
+}
+function updateLives(){
+  livesEl.textContent = '❤'.repeat(Math.max(0,lives)) + '♡'.repeat(Math.max(0,MAX_LIVES-lives));
+}
+// Called when the player takes an unshielded hit. Returns true if the game
+// ended (so callers can `return`). Brief i-frames prevent losing several
+// lives to a single cluster of hazards.
+function loseLife(x,y){
+  if(invuln>0) return false;
+  lives--; updateLives();
+  burst(x,y,'#ff5d8f',26);
+  Audio8.sfx('hit');
+  if(lives<=0){ gameOver(); return true; }
+  invuln = 90;            // ~1.5s of mercy invulnerability
+  return false;
 }
 function activate(type){
   if(type==='shield') shield = 360;
@@ -468,6 +488,7 @@ function update(){
   if(shield>0) shield--;
   if(slowmo>0) slowmo--;
   if(magnet>0) magnet--;
+  if(invuln>0) invuln--;
   updatePowerHud();
 
   // movement
@@ -494,7 +515,8 @@ function update(){
     if(b.x < player.x+player.w && b.x+b.w > player.x &&
        b.y < player.y+player.h && b.y+b.h > player.y){
       if(shield>0){ burst(b.x+b.w/2,b.y+b.h/2,'#00ff9d',16); blocks.splice(i,1); shield=0; Audio8.sfx('power'); }
-      else { gameOver(); return; }
+      else if(invuln>0){ /* mercy i-frames: pass through */ }
+      else { blocks.splice(i,1); if(loseLife(b.x+b.w/2,b.y+b.h/2)) return; }
     }
   }
   // orbs (magnet pulls them toward the player)
@@ -547,7 +569,8 @@ function update(){
     else if(boss.beamState==='fire'){
       if(Math.abs((player.x+player.w/2)-boss.beamX) < 26){
         if(shield>0){ shield=0; burst(player.x+player.w/2,player.y,'#00ff9d',16); }
-        else { gameOver(); return; }
+        else if(invuln>0){ /* mercy i-frames */ }
+        else if(loseLife(player.x+player.w/2,player.y)) return;
       }
       if(boss.beamT<=0){ boss.beamState='idle'; boss.beamT=180 - rage*70 + Math.random()*100; }
     }
@@ -558,7 +581,8 @@ function update(){
       if(bb.y>H+20||bb.x<-20||bb.x>W+20){ bossBullets.splice(i,1); continue; }
       if(Math.hypot(bb.x-cx, bb.y-cy) < bb.r+16){
         if(shield>0){ shield=0; burst(bb.x,bb.y,'#00ff9d',14); bossBullets.splice(i,1); }
-        else { gameOver(); return; }
+        else if(invuln>0){ bossBullets.splice(i,1); }
+        else { bossBullets.splice(i,1); if(loseLife(bb.x,bb.y)) return; }
       }
     }
   }
@@ -657,10 +681,12 @@ function draw(){
     ctx.fillStyle=theme.orb; roundRect(boss.x, boss.y-13, boss.w*hp, 6, 3); ctx.fill();
   }
 
-  // player
-  ctx.fillStyle=theme.player; ctx.shadowColor=theme.player; ctx.shadowBlur=18;
-  roundRect(player.x,player.y,player.w,player.h,7); ctx.fill();
-  ctx.shadowBlur=0;
+  // player (blinks during post-hit invulnerability)
+  if(!(invuln>0 && Math.floor(frame*0.3)%2)){
+    ctx.fillStyle=theme.player; ctx.shadowColor=theme.player; ctx.shadowBlur=18;
+    roundRect(player.x,player.y,player.w,player.h,7); ctx.fill();
+    ctx.shadowBlur=0;
+  }
 
   // shield ring
   if(shield>0){
