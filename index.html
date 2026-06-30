@@ -711,6 +711,8 @@ function gameOver(){
     (score>=best && score>0 ? ' &nbsp;🏆 New best!' : ` Best: ${best}`);
   startBtn.textContent='Play Again';
   overlay.classList.remove('hidden');
+  // Back on the start screen — safe moment to apply a pending app update.
+  if(window.__applyPendingUpdate) window.__applyPendingUpdate();
 }
 
 function start(){
@@ -748,7 +750,37 @@ window.addEventListener('touchstart', touchSteer, {passive:false});
 window.addEventListener('touchmove', touchSteer, {passive:false});
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  let _refreshing=false, _waitingSW=null;
+  // Apply a downloaded update only when the player is NOT mid-game.
+  function maybeApplyUpdate(){
+    if(_waitingSW && !running){ _waitingSW.postMessage('SKIP_WAITING'); }
+  }
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(_refreshing) return; _refreshing=true; location.reload();
+  });
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.update().catch(()=>{});
+      reg.addEventListener('updatefound', ()=>{
+        const nw=reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange', ()=>{
+          // installed + an existing controller => this is an update, not first install
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            _waitingSW=nw; maybeApplyUpdate();
+          }
+        });
+      });
+    }).catch(()=>{});
+    // Re-check for updates whenever the app is brought back to the foreground.
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible'){
+        navigator.serviceWorker.getRegistration().then(r=>r && r.update().catch(()=>{}));
+      }
+    });
+  });
+  // Expose so the game can apply a pending update when returning to the menu.
+  window.__applyPendingUpdate = maybeApplyUpdate;
 }
 </script>
 </body>
